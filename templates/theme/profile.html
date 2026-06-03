@@ -1,0 +1,65 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio profile page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — {{ user.username }}'s Profile</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="layout__body">
+        <div class="profile">
+            <div class="avatar settings__avatar">
+                <img src="{{ user.avatar.url }}" alt="Avatar" />
+            </div>
+            <div class="bio">
+                {% if user.bio %}
+                <p>{{ user.bio }}</p>
+                {% endif %}
+            </div>
+            <p><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
+            <p>{{ user.email }}</p>
+            <p>{{ user.total_following }} following — {{ user.total_followers }} followers</p>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;">
+            {% if request.user == user %}
+                <a href="{% url 'update-user' %}">
+                    <button class="btn btn--link" type="button">Edit Profile</button>
+                </a>
+                <a href="{% url 'inbox' %}">
+                    <button class="btn btn--link" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Messages
+                    </button>
+                </a>
+            {% else %}
+                <a href="{% url 'conversation' user.id %}">
+                    <button class="btn btn--main" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        Message
+                    </button>
+                </a>
+            {% endif %}
+        </div>
+
+        <hr />
+        {% include 'theme/feed.html' with posts=posts user=user %}
+    </div>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

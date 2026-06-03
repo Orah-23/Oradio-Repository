@@ -1,0 +1,309 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio post page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — {{ post.host }}'s Post</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="layout__body">
+
+        <!-- Post -->
+        <div class="post">
+            <div class="postList">
+                <div class="postList__header">
+                    <a href="{% url 'user-profile' post.host.id %}">
+                        <div class="avatar avatar--medium {% if post.host.is_online %}active{% endif %}">
+                            <img src="{{ post.host.avatar.url }}" />
+                        </div>
+                        <h3 class="postList__author">@{{ post.host }}</h3>
+                    </a>
+
+                    {% if post.host != request.user and post.host not in request.user.following.all %}
+                    <a href="{% url 'follow-user' post.host.id %}">
+                        Follow
+                    </a>
+                    {% elif post.host != request.user and post.host in request.user.following.all %}
+                    <a href="{% url 'unfollow-user' post.host.id %}">
+                        Unfollow
+                    </a>
+                    {% endif %}
+                </div>
+
+            <p class="post__caption">{{ post.caption }}</p>
+            <div class="post__body">
+                <audio controls src="{{ post.body.url }}" onplay="pauseOthers(this)"></audio>
+            </div>
+            <p class="post__date">{{ post.created|timesince }} ago</p>
+
+            <div class="postList__actions">
+                <a href="{% url 'post' post.id %}" class="btn btn--link">
+                    Comment
+                </a>
+                {% if request.user in post.users_reacted.all %}
+                    <a href="{% url 'unreact' post.id %}" class="react-btn reacted">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    {{ post.users_reacted.count }}
+                    </a>
+                {% else %}
+                    <a href="{% url 'react' post.id %}" class="react-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                    {{ post.users_reacted.count }}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Record a top-level comment -->
+        {% if request.user.is_authenticated %}
+        <div class="record-bar" id="mainRecorder">
+            <button id="startBtn" type="button" class="btn btn--main">⏺ Record</button>
+            <div class="waveform idle" id="waveform">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+            <div class="rec-dot" id="recDot"></div>
+            <span class="rec-label" id="recLabel">REC</span>
+            <button id="stopBtn" type="button" disabled class="btn btn--link">⏹ Stop</button>
+            <button id="commentBtn" type="button" disabled class="btn btn--main">💬 Post</button>
+        </div>
+        {% endif %}
+
+        <hr />
+
+        <!-- Comments -->
+        <div class="comments">
+            {% for comment in comments %}
+            {% if not comment.parent %}
+            <div class="comment">
+                <div class="comment__header">
+                    <a href="{% url 'user-profile' comment.user.id %}">
+                        <span class="comment__user">@{{ comment.user }}</span>
+                    </a>
+                    
+                    {% if request.user == comment.user %}
+                    <a href="{% url 'delete-comment' comment.id %}" class="comment__delete" title="Delete">✕</a>
+                    {% endif %}
+                </div>
+
+                <audio controls src="{{ comment.body.url }}" onplay="pauseOthers(this)"></audio>
+
+                <div class="comment__footer">
+                    {% if request.user.is_authenticated %}
+                    <button class="reply-toggle" onclick="toggleReply('reply-{{ comment.id }}')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                        Reply
+                    </button>
+                    {% endif %}
+                    <span class="reply-toggle">{{ comment.created|timesince }} ago</span>
+                    {% if comment.replies.all %}
+                    <button class="show-replies-btn" onclick="toggleReplies('replies-{{ comment.id }}', this)">
+                        ▾ {{ comment.replies.count }} repl{{ comment.replies.count|pluralize:"y,ies" }}
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Inline reply recorder -->
+                {% if request.user.is_authenticated %}
+                <div class="reply-recorder" id="reply-{{ comment.id }}">
+                    <button type="button" class="btn btn--main" style="font-size:0.78rem;padding:6px 12px;" onclick="startReply('{{ comment.id }}', this)">⏺</button>
+                    <div class="waveform idle" id="reply-wave-{{ comment.id }}">
+                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        <div class="bar"></div><div class="bar"></div>
+                    </div>
+                    <div class="rec-dot" id="reply-dot-{{ comment.id }}"></div>
+                    <button type="button" class="btn btn--link" style="font-size:0.78rem;padding:6px 12px;" id="reply-stop-{{ comment.id }}" disabled onclick="stopReply('{{ comment.id }}', this)">⏹</button>
+                    <button type="button" class="btn btn--main" style="font-size:0.78rem;padding:6px 12px;" id="reply-post-{{ comment.id }}" disabled onclick="postReply('{{ comment.id }}', '{% url 'reply-comment' comment.id %}', '{{ csrf_token }}', '{% url 'post' post.id %}')">↑ Send</button>
+                </div>
+                {% endif %}
+
+                <!-- Threaded replies -->
+                {% if comment.replies.all %}
+                <div class="replies collapsed" id="replies-{{ comment.id }}">
+                    {% for reply in comment.replies.all %}
+                    <div class="reply">
+                        <div class="reply__header">
+                            <span class="reply__user">@{{ reply.user }}</span>
+                            <span class="reply__date">{{ reply.created|timesince }} ago</span>
+                            {% if request.user == reply.user %}
+                            <a href="{% url 'delete-comment' reply.id %}" class="reply__delete" title="Delete">✕</a>
+                            {% endif %}
+                        </div>
+                        <audio controls src="{{ reply.body.url }}" onplay="pauseOthers(this)"></audio>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            </div>
+            {% endif %}
+            {% empty %}
+            <p class="empty-feed">No comments yet. Be the first!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <hr/>
+
+    {% if comments %}
+        <p>End of comments...</p>
+    {% endif %}
+
+    <script>
+        // ── Exclusive audio ──────────────────────────────────────
+        function pauseOthers(current) {
+            document.querySelectorAll('audio').forEach(a => {
+                if (a !== current) { a.pause(); a.currentTime = 0; }
+            });
+        }
+
+        // ── Toggle reply recorder ────────────────────────────────
+        function toggleReply(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
+
+        // ── Toggle replies thread ────────────────────────────────
+        function toggleReplies(id, btn) {
+            const el = document.getElementById(id);
+            el.classList.toggle('collapsed');
+            btn.textContent = el.classList.contains('collapsed')
+                ? btn.textContent.replace('▴', '▾')
+                : btn.textContent.replace('▾', '▴');
+        }
+
+        // ── Waveform helper ──────────────────────────────────────
+        function setWave(waveId, dotId, active) {
+            const wave = document.getElementById(waveId);
+            const dot  = document.getElementById(dotId);
+            if (!wave) return;
+            wave.classList.toggle('recording', active);
+            wave.classList.toggle('idle', !active);
+            if (dot) dot.classList.toggle('visible', active);
+        }
+
+        // ── Main comment recorder ────────────────────────────────
+        const startBtn   = document.getElementById('startBtn');
+        const stopBtn    = document.getElementById('stopBtn');
+        const commentBtn = document.getElementById('commentBtn');
+        const waveform   = document.getElementById('waveform');
+        const recDot     = document.getElementById('recDot');
+        const recLabel   = document.getElementById('recLabel');
+        let mainRecorder, mainChunks = [], mainBlob;
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mainChunks = [];
+                mainRecorder = new MediaRecorder(stream);
+                mainRecorder.ondataavailable = e => { if (e.data.size > 0) mainChunks.push(e.data); };
+                mainRecorder.onstop = () => {
+                    mainBlob = new Blob(mainChunks, { type: 'audio/webm' });
+                    commentBtn.disabled = false;
+                };
+                mainRecorder.start();
+                setWave('waveform', 'recDot', true);
+                recLabel.classList.add('visible');
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                commentBtn.disabled = true;
+            } catch (err) { alert('Microphone error: ' + err.message); }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (mainRecorder && mainRecorder.state !== 'inactive') mainRecorder.stop();
+            setWave('waveform', 'recDot', false);
+            recLabel.classList.remove('visible');
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        });
+
+        commentBtn.addEventListener('click', async () => {
+            if (!mainBlob) return;
+            const fd = new FormData();
+            fd.append('media', mainBlob, 'recording.wav');
+            commentBtn.textContent = 'Posting…';
+            commentBtn.disabled = true;
+            try {
+                const r = await fetch("{% url 'post' post.id %}", {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: fd
+                });
+                if (r.ok) { window.location.href = "{% url 'post' post.id %}"; }
+                else { alert('Failed: ' + r.status); commentBtn.disabled = false; commentBtn.textContent = '💬 Post'; }
+            } catch (err) { alert(err.message); commentBtn.disabled = false; commentBtn.textContent = '💬 Post'; }
+        });
+
+        // ── Per-comment reply recorders ──────────────────────────
+        const replyRecorders = {};
+
+        function startReply(id, btn) {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                const chunks = [];
+                const recorder = new MediaRecorder(stream);
+                recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                recorder.onstop = () => {
+                    replyRecorders[id].blob = new Blob(chunks, { type: 'audio/webm' });
+                    document.getElementById('reply-post-' + id).disabled = false;
+                };
+                recorder.start();
+                replyRecorders[id] = { recorder, blob: null };
+                setWave('reply-wave-' + id, 'reply-dot-' + id, true);
+                document.getElementById('reply-stop-' + id).disabled = false;
+                document.getElementById('reply-post-' + id).disabled = true;
+                btn.disabled = true;
+            }).catch(err => alert('Microphone error: ' + err.message));
+        }
+
+        function stopReply(id, btn) {
+            const r = replyRecorders[id];
+            if (r && r.recorder.state !== 'inactive') r.recorder.stop();
+            setWave('reply-wave-' + id, 'reply-dot-' + id, false);
+            document.getElementById('reply-stop-' + id).disabled = true;
+            // re-enable the record button (previous sibling)
+            const recBtn = document.querySelector('#reply-' + id + ' .btn--main');
+            if (recBtn) recBtn.disabled = false;
+        }
+
+        async function postReply(id, url, csrf, redirect) {
+            const r = replyRecorders[id];
+            if (!r || !r.blob) return alert('No recording.');
+            const fd = new FormData();
+            fd.append('media', r.blob, 'reply.wav');
+            const btn = document.getElementById('reply-post-' + id);
+            btn.textContent = '…';
+            btn.disabled = true;
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrf },
+                    body: fd
+                });
+                if (res.ok) { window.location.href = redirect; }
+                else { alert('Failed: ' + res.status); btn.disabled = false; btn.textContent = '↑ Send'; }
+            } catch (err) { alert(err.message); btn.disabled = false; btn.textContent = '↑ Send'; }
+        }
+    </script>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

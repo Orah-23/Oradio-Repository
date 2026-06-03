@@ -1,0 +1,93 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio feed page.
+-->
+
+{% load static %}
+{% block content %}
+{% if user.is_authenticated %}
+  <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+    <a href="{% url 'create-post' %}">
+        <button class="btn btn--main" type="button">+ New Post</button>
+    </a>
+  </div>
+{% endif %}
+
+{% if user is None%}
+  <h3>All Posts</h3>
+{% endif %}
+<br />
+{% for post in posts %}
+  <div class="postList">
+    <div class="postList__header">
+      <a href="{% url 'user-profile' post.host.id %}">
+        <div class="avatar avatar--medium {% if post.host.is_online %}active{% endif %}">
+            <img src="{{ post.host.avatar.url }}" />
+        </div>
+      
+        <h3 class="postList__author">@{{ post.host }}</h3>
+      </a>
+      {% if post.host != request.user and post.host not in request.user.following.all %}
+      <a href="{% url 'follow-user' post.host.id %}">
+        Follow
+      </a>
+      {% elif post.host != request.user and post.host in request.user.following.all %}
+      <a href="{% url 'unfollow-user' post.host.id %}">
+        Unfollow
+      </a>
+      {% endif %}
+    </div>
+    <p class="postList__content">{{ post.caption }}</p>
+    <div class="postList__content">
+      <audio controls onplay="pauseOthers(this)">
+        <source src="{{ post.body.url }}" type="audio/wav">
+        Your browser does not support the audio element.
+      </audio>
+      {% if request.user == post.host %}
+        <a href="{% url 'delete-post' post.id %}" class="btn btn--link">
+          <img src="{% static 'media/icons/delete.svg' %}" />
+        </a>
+      {% endif %}
+    </div>
+    <p class="post__date">{{ post.created|timesince }} ago</p>
+    <div class="postList__actions">
+      <a href="{% url 'post' post.id %}" class="btn btn--link">
+        Comment
+      </a>
+      {% if request.user in post.users_reacted.all %}
+        <a href="{% url 'unreact' post.id %}" class="react-btn reacted">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          {{ post.users_reacted.count }}
+        </a>
+      {% else %}
+        <a href="{% url 'react' post.id %}" class="react-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          {{ post.users_reacted.count }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  <hr />
+{% empty %}
+  <p>No posts yet.</p>
+{% endfor %}
+{% if posts %}
+<p>End of posts...</p>
+{% endif %}
+
+<script>
+  function pauseOthers(current) {
+    document.querySelectorAll('audio').forEach(function(audio) {
+      if (audio !== current) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    });
+  }
+</script>
+{% endblock %}

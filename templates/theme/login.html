@@ -1,0 +1,55 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio login page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — Login</title>
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .auth-wrap { width: 100%; max-width: 400px; padding: 24px; }
+        .auth-logo { text-align: center; margin-bottom: 32px; }
+        .auth-logo h1 { font-family: var(--font-display); font-size: 2.4rem; color: var(--amber); }
+        .auth-logo p { color: var(--text-3); font-size: 0.875rem; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <div class="auth-logo">
+            <h1>Oradio</h1>
+            <p>Listen to the world.</p>
+        </div>
+
+        {% if messages %}
+        <ul class="messages" style="margin-bottom:16px;">
+            {% for message in messages %}<li>{{ message }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+
+        <form class="form" method="POST">
+            {% csrf_token %}
+            <div class="form__group">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" placeholder="e.g. oratile23" required />
+            </div>
+            <div class="form__group">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" placeholder="••••••••" required />
+            </div>
+            <button class="btn btn--main" type="submit" style="justify-content:center;">Login</button>
+        </form>
+
+        <div class="auth__action">
+            <p>No account yet?</p>
+            <a href="{% url 'register' %}"><strong>Sign Up</strong></a>
+        </div>
+    </div>
+</body>
+</html>

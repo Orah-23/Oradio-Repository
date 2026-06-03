@@ -1,0 +1,57 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio profile editing page.
+-->
+
+{% extends 'navbar.html' %}
+<!DOCTYPE html>
+{% load static %}
+
+{% block content %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio - Listen to the world!</title>
+</head>
+
+<body>
+  {% include 'navbar.html' %}
+  <div class="layout__body">
+
+    <h2 class="auth__tagline">
+      Update Profile
+    </h2>
+
+    <form class="form" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="avatar settings__avatar">
+        <img src="{{ user.avatar.url }}" alt="Avatar" />
+      </div>
+      <br /><hr /><br />
+
+      {{ form.as_p }}
+
+      <br />
+      <button class="btn btn--main" type="submit">
+        Update
+      </button>
+    </form>
+
+    <br /><hr />
+
+    <div class="auth__action">
+      <a href="{% url 'user-profile' user.id %}" class="btn btn--link">
+        Back to Profile
+      </a>
+    </div>
+
+  </div>
+</body>
+</html>
+{% endblock %}

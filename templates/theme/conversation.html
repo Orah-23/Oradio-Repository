@@ -1,0 +1,333 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio conversation page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — Chat with @{{ other.username }}</title>
+    <style>
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 0;
+            height: calc(100vh - 68px);
+            max-width: 1000px;
+            margin: 0 auto;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        /* Sidebar */
+        .chat-sidebar {
+            border-right: 1px solid var(--border);
+            background: var(--bg-2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-sidebar__header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-sidebar__list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .chat-sidebar__user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background var(--transition);
+            position: relative;
+        }
+
+        .chat-sidebar__user:hover { background: var(--surface); }
+        .chat-sidebar__user.active { background: var(--surface); border-left: 2px solid var(--amber); }
+
+        .chat-sidebar__user p {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .chat-sidebar__user span {
+            font-size: 0.72rem;
+            color: var(--text-3);
+        }
+
+        /* Chat main */
+        .chat-main {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .chat-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-2);
+            flex-shrink: 0;
+        }
+
+        .chat-header__name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .chat-header__status {
+            font-size: 0.75rem;
+            color: var(--text-3);
+        }
+
+        .chat-header__status.online { color: #4caf7d; }
+
+        /* Messages area */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 68%;
+        }
+
+        .msg--mine { align-self: flex-end; align-items: flex-end; }
+        .msg--theirs { align-self: flex-start; align-items: flex-start; }
+
+        .msg__bubble {
+            padding: 10px 14px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .msg--mine .msg__bubble {
+            background: var(--amber);
+            color: #0a0a0b;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg--theirs .msg__bubble {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg__time {
+            font-size: 0.7rem;
+            color: var(--text-3);
+            margin-top: 3px;
+            font-family: var(--font-mono);
+            padding: 0 4px;
+        }
+
+        /* Input bar */
+        .chat-input {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-2);
+            flex-shrink: 0;
+        }
+
+        .chat-input form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            color: var(--text);
+            font-size: 0.9rem;
+            padding: 10px 16px;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+
+        .chat-input input:focus {
+            border-color: var(--amber);
+            box-shadow: 0 0 0 3px var(--amber-glow);
+        }
+
+        .chat-input button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--amber);
+            color: #0a0a0b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        .chat-input button:hover { background: #f8b740; transform: scale(1.05); }
+
+        /* Online dot */
+        .online-dot {
+            width: 9px;
+            height: 9px;
+            background: #4caf7d;
+            border-radius: 50%;
+            border: 2px solid var(--bg-2);
+            position: absolute;
+            bottom: 10px;
+            left: 36px;
+            flex-shrink: 0;
+        }
+
+        .avatar-wrap { position: relative; flex-shrink: 0; }
+        .avatar-wrap .online-dot { bottom: 0; left: 26px; }
+
+        @media (max-width: 640px) {
+            .chat-layout { grid-template-columns: 1fr; }
+            .chat-sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="chat-layout">
+        <div class="chat-sidebar">
+            <div class="chat-sidebar__header">
+                Contacts
+            </div>
+            <div class="chat-sidebar__list">
+                {% for u in all_users %}
+                <a href="{% url 'conversation' u.id %}" class="chat-sidebar__user {% if u == other %}active{% endif %}">
+                    <div class="avatar-wrap">
+                        <div class="avatar avatar--medium {% if u.is_online %}active{% endif %}">
+                            <img src="{{ u.avatar.url }}" />
+                        </div>
+                        {% if u.is_online %}<span class="online-dot"></span>{% endif %}
+                    </div>
+                    <div>
+                        <p>@{{ u.username }}</p>
+                        <span>{% if u.is_online %}Online{% else %}{{ u.last_seen|timesince }} ago{% endif %}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Chat main -->
+        <div class="chat-main">
+            <div class="chat-header">
+                <div class="avatar-wrap">
+                    <div class="avatar avatar--medium {% if other.is_online %}active{% endif %}">
+                        <img src="{{ other.avatar.url }}" />
+                    </div>
+                    {% if other.is_online %}<span class="online-dot"></span>{% endif %}
+                </div>
+                <div>
+                    <p class="chat-header__name">@{{ other.username }}</p>
+                    <p class="chat-header__status {% if other.is_online %}online{% endif %}">
+                        {% if other.is_online %}● Online{% else %}Last seen {{ other.last_seen|timesince }} ago{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                {% for msg in messages %}
+                <div class="msg {% if msg.sender == request.user %}msg--mine{% else %}msg--theirs{% endif %}">
+                    <div class="msg__bubble">{{ msg.body }}</div>
+                    <span class="msg__time">{{ msg.created|timesince }} ago</span>
+                </div>
+                {% empty %}
+                <p style="text-align:center;color:var(--text-3);margin-top:40px;font-size:0.875rem;">
+                    Start the conversation with @{{ other.username }}
+                </p>
+                {% endfor %}
+            </div>
+
+            <div class="chat-input">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input
+                        name="body"
+                        type="text"
+                        placeholder="Message @{{ other.username }}…"
+                        autocomplete="off"
+                        autofocus
+                    />
+                    <button type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chatMessages');
+
+        // Auto-scroll initially
+        if (chat) {
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function refreshMessages() {
+            try {
+                const response = await fetch(window.location.href);
+                const html = await response.text();
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                const newMessages = doc.getElementById('chatMessages');
+
+                // Replace only messages section
+                if (newMessages && chat) {
+                    chat.innerHTML = newMessages.innerHTML;
+
+                    // Scroll to bottom
+                    chat.scrollTop = chat.scrollHeight;
+                }
+
+            } catch (error) {
+                console.log('Message refresh failed:', error);
+            }
+        }
+
+        // Refresh every 5 seconds
+        setInterval(refreshMessages, 5000);
+    </script>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

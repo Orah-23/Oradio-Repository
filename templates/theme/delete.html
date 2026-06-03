@@ -1,0 +1,39 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio delete page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — Delete Post</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="layout__body">
+        <div class="delete__post">
+            <div style="font-size:2.5rem;margin-bottom:12px;">🗑️</div>
+            <h3 class="delete__title">Delete Post</h3>
+            <p class="delete__message">
+                Are you sure you want to delete <strong>"{{ obj.caption|default:obj }}"</strong>?
+                This cannot be undone.
+            </p>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <form method="POST">
+                    {% csrf_token %}
+                    <button class="btn btn--danger" type="submit">Yes, delete it</button>
+                </form>
+                <a href="{% url 'home' %}">
+                    <button class="btn btn--link" type="button">Cancel</button>
+                </a>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio messenger page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — Inbox</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="layout__body">
+        <h2 style="font-family:var(--font-display);margin-bottom:24px;">Messages</h2>
+
+        {% if conversations %}
+        <div class="inbox-list">
+            {% for conv in conversations %}
+            <a href="{% url 'conversation' conv.user.id %}" class="inbox-item">
+                <div class="inbox-avatar">
+                    <div class="avatar avatar--medium {% if conv.user.is_online %}active{% endif %}">
+                        <img src="{{ conv.user.avatar.url }}" />
+                    </div>
+                    {% if conv.user.is_online %}
+                    <span class="online-dot"></span>
+                    {% endif %}
+                </div>
+                <div class="inbox-info">
+                    <div class="inbox-top">
+                        <span class="inbox-name">@{{ conv.user.username }}</span>
+                        {% if conv.last_msg %}
+                        <span class="inbox-time">{{ conv.last_msg.created|timesince }} ago</span>
+                        {% endif %}
+                    </div>
+                    {% if conv.last_msg %}
+                    <p class="inbox-preview {% if conv.unread %}inbox-preview--unread{% endif %}">
+                        {% if conv.last_msg.sender == request.user %}You: {% endif %}
+                        {{ conv.last_msg.body|truncatechars:50 }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% if conv.unread %}
+                <span class="inbox-badge"><strong>{{ conv.unread }} unread messages</strong></span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-feed" style="text-align:center;padding:60px 0;">
+            <p style="font-size:2rem;margin-bottom:12px;">💬</p>
+            <p>No conversations yet.</p>
+            <p style="color:var(--text-3);font-size:0.875rem;margin-top:6px;">Visit someone's profile to start a chat.</p>
+        </div>
+        {% endif %}
+    </div>
+    <script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>

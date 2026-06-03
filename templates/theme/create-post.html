@@ -1,0 +1,253 @@
+<!--
+    Author: Francois Oratile Kgatlhanye
+    Date: 2026-06-04
+    Description: Structure of the Oradio create post page.
+-->
+
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>Oradio — Create Post</title>
+
+    <style>
+        /* ───────── WAVEFORM (MATCHES POST PAGE) ───────── */
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 28px;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .waveform .bar {
+            width: 3px;
+            border-radius: 99px;
+            background: var(--amber);
+            height: 4px;
+        }
+
+        .waveform.idle .bar {
+            height: 4px;
+            opacity: 0.3;
+        }
+
+        .waveform.recording .bar {
+            animation: wave 0.8s ease-in-out infinite;
+            opacity: 1;
+        }
+
+        .waveform.recording .bar:nth-child(1)  { animation-delay: 0.0s; }
+        .waveform.recording .bar:nth-child(2)  { animation-delay: 0.1s; }
+        .waveform.recording .bar:nth-child(3)  { animation-delay: 0.2s; }
+        .waveform.recording .bar:nth-child(4)  { animation-delay: 0.3s; }
+        .waveform.recording .bar:nth-child(5)  { animation-delay: 0.15s; }
+        .waveform.recording .bar:nth-child(6)  { animation-delay: 0.25s; }
+        .waveform.recording .bar:nth-child(7)  { animation-delay: 0.05s; }
+        .waveform.recording .bar:nth-child(8)  { animation-delay: 0.35s; }
+        .waveform.recording .bar:nth-child(9)  { animation-delay: 0.2s; }
+        .waveform.recording .bar:nth-child(10) { animation-delay: 0.0s; }
+        .waveform.recording .bar:nth-child(11) { animation-delay: 0.4s; }
+        .waveform.recording .bar:nth-child(12) { animation-delay: 0.1s; }
+
+        @keyframes wave {
+            0%, 100% { height: 4px; }
+            50%      { height: 22px; }
+        }
+
+        .rec-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e05252;
+            display: none;
+            flex-shrink: 0;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .rec-dot.visible { display: block; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.3; transform: scale(0.7); }
+        }
+
+        .rec-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #e05252;
+            display: none;
+            letter-spacing: 1px;
+        }
+
+        .rec-label.visible { display: block; }
+    </style>
+</head>
+
+<body>
+{% include 'navbar.html' %}
+
+<div class="create-post-page">
+    <h1>New Post</h1>
+
+    <div class="create-post-card">
+
+        <!-- Caption -->
+        <div>
+            <label style="font-size:0.8rem;font-weight:600;color:var(--text-3);
+            text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">
+                Caption
+            </label>
+
+            <input id="caption" name="caption" type="text"
+                   placeholder="What's this about?" />
+        </div>
+
+        <!-- Preview -->
+        <audio id="audioPlayback" controls style="display:none;width:100%;"></audio>
+
+        <!-- Recorder -->
+        <div class="record-bar" id="mainRecorder">
+
+            <button id="startBtn" type="button" class="btn btn--main">
+                ⏺ Record
+            </button>
+
+            <!-- WAVEFORM (NOW MATCHED) -->
+            <div class="waveform idle" id="waveform">
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+
+            <div class="rec-dot" id="recDot"></div>
+            <span class="rec-label" id="recLabel">REC</span>
+
+            <button id="stopBtn" type="button" disabled class="btn btn--link">
+                ⏹ Stop
+            </button>
+
+            <button id="uploadBtn" type="button" disabled class="btn btn--main">
+                Upload
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    const audioPlayback = document.getElementById('audioPlayback');
+    const caption = document.getElementById('caption');
+
+    const waveform = document.getElementById('waveform');
+    const recDot = document.getElementById('recDot');
+    const recLabel = document.getElementById('recLabel');
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let audioBlob;
+
+    // ── Wave toggle (same logic as post page) ──
+    function setWave(active) {
+        waveform.classList.toggle('recording', active);
+        waveform.classList.toggle('idle', !active);
+
+        recDot.classList.toggle('visible', active);
+        recLabel.classList.toggle('visible', active);
+    }
+
+    // ── Start recording ──
+    startBtn.addEventListener('click', async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+
+                audioPlayback.src = URL.createObjectURL(audioBlob);
+                audioPlayback.style.display = 'block';
+
+                uploadBtn.disabled = false;
+            };
+
+            mediaRecorder.start();
+
+            setWave(true);
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            uploadBtn.disabled = true;
+
+        } catch (err) {
+            alert('Microphone error: ' + err.message);
+        }
+    });
+
+    // ── Stop recording ──
+    stopBtn.addEventListener('click', () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+
+        setWave(false);
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+    });
+
+    // ── Upload ──
+    uploadBtn.addEventListener('click', async () => {
+        if (!audioBlob) return alert('No recording available.');
+
+        const formData = new FormData();
+        formData.append('media', audioBlob, 'recording.webm');
+        formData.append('caption', caption.value);
+
+        uploadBtn.textContent = 'Uploading…';
+        uploadBtn.disabled = true;
+
+        try {
+            const response = await fetch("{% url 'create-post' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                window.location.href = "{% url 'home' %}";
+            } else {
+                alert('Upload failed: ' + response.status);
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload';
+            }
+
+        } catch (err) {
+            alert('Upload failed: ' + err.message);
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload';
+        }
+    });
+</script>
+
+<script src="{% static 'js/script.js' %}"></script>
+</body>
+</html>
