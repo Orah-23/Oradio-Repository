@@ -6,7 +6,7 @@
 
 ## Overview
 
-Oradio is a Django-based audio social network. Instead of typing posts and comments, users record voice notes directly in the browser. Think Twitter, but everything is spoken.
+Oradio is a Django-based audio social network. Instead of typing posts and comments, users record voice notes directly in the browser.
 
 **Core idea:** microphone → record → post. No text required.
 
